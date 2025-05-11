@@ -1,4 +1,5 @@
-data_root: /data/fewshot/miniImageNet--ravi
+# data_root: /data/fewshot/miniImageNet--ravi
+data_root: /mnt/d/Users/Jiuxiao/Documents/MyProjects/LibFewShot/datasets/miniImageNet--ravi
 image_size: 84
 use_memory: False
 augment: True
