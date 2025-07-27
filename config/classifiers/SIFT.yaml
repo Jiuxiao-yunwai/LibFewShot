@@ -1,0 +1,12 @@
+classifier:
+  name: SIFT
+  kwargs:
+    semantic_dim: 300  # 语义特征维度: miniImageNet等数据集用300, CUB数据集用312
+    classifier_method: metric  # 分类方法: metric(度量学习), gradient(梯度), nonparam(非参数)
+    setting: in  # 评估设置: in(归纳), tran(转导)
+    num_aug: 5  # 每个基础类的增强样本数量
+    lr: 0.001  # 编码器/变换器/解码器的学习率
+    grad_lr: 0.1  # 基于梯度分类器的学习率
+    ablation: no  # 消融研究: no(完整), enc_recon, dec_recon, cpt, all
+    cls: lr  # 非参数分类器类型: lr(逻辑回归), svm(支持向量机), knn(k近邻) - 仅在classifier_method为nonparam时使用
+    mode: st  # SIFT模式: st(语义变换), ns(无语义), dc(直接分类)

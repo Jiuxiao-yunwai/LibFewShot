@@ -1,0 +1,170 @@
+includes:
+  - headers/data.yaml
+  - headers/device.yaml
+  - headers/misc.yaml
+  - headers/model.yaml
+  - headers/optimizer.yaml
+  - classifiers/SIFT.yaml
+  - backbones/resnet12.yaml
+
+device_ids: 0  # GPU设备ID
+n_gpu: 1  # GPU数量
+way_num: 5  # 类别数量
+shot_num: 1  # 每类支持样本数
+query_num: 15  # 每类查询样本数
+episode_size: 1 # 批次大小 - 保持为1，避免内存问题
+train_episode: 300  # 训练episode数 - 由于每个episode计算量大，减少episode数
+test_episode: 600  # 测试episode数 - 参考SIFT原始代码中的tasknum=600
+log_interval: 10  # 每10个episode输出一次信息 - 更频繁的输出便于监控进度
+epoch: 30  # 训练轮数 - 减少epoch数，因为SIFT每个episode训练强度很高
+
+# 优化器配置
+optimizer:
+  name: Adam
+  kwargs:
+    lr: 1e-3
+    weight_decay: 5e-4
+  other: ~
+
+# 分类器配置（覆盖SIFT.yaml中的默认设置）
+# 优化配置：使用metric方法而不是gradient方法可以显著加速训练
+classifier:
+  name: SIFT
+  kwargs:
+    semantic_dim: 300  # 语义特征维度
+    classifier_method: metric  # 使用度量学习，比gradient方法快很多
+    setting: in  # 评估设置: in(归纳), tran(转导) - 归纳设置更快
+    num_aug: 3  # 每个基础类的增强样本数量 - 减少到3加速训练
+    lr: 0.001  # 编码器/变换器/解码器的学习率
+    grad_lr: 0.1  # 基于梯度分类器的学习率
+    ablation: no  # 消融研究: no(完整), enc_recon, dec_recon, cpt, all
+    cls: lr  # 非参数分类器类型: lr(逻辑回归), svm(支持向量机), knn(k近邻)
+    mode: st  # SIFT模式: st(语义变换), ns(无语义), dc(直接分类)
+
+# 主干网络配置
+backbone:
+  name: resnet12  # 骨干网络
+  kwargs:
+    keep_prob: 0.0
+    avg_pool: True
+    is_flatten: True
+
+# 备用骨干网络选项
+# backbone:
+#   name: Conv64F
+#   kwargs:
+#     is_flatten: True
+#     is_feature: False
+#     leaky_relu: False
+#     negative_slope: 0.2
+#     last_pool: True
+# Conv64F: feat_dim: 1600
+
+# backbone:
+#   name: resnet18
+#   kwargs:
+#     avg_pool: True
+#     is_flatten: True
+# resnet18: feat_dim: 512
+
+# backbone:
+#   name: WRN
+#   kwargs:
+#     depth: 28
+#     widen_factor: 10
+#     dropRate: 0.0
+#     avg_pool: True
+#     is_flatten: True
+# WRN: feat_dim: 640
+
+# 备用分类器配置（用于不同的消融研究）
+
+# 🚀 快速训练配置（如果训练仍然很慢，可以尝试这个配置）:
+# classifier:
+#   name: SIFT
+#   kwargs:
+#     semantic_dim: 300
+#     classifier_method: metric  # 度量学习最快
+#     setting: in  # 归纳设置比转导设置快
+#     num_aug: 1  # 最少增强样本
+#     lr: 0.001
+#     grad_lr: 0.1
+#     ablation: no
+#     cls: lr
+#     mode: dc  # 直接分类模式最快，跳过语义变换
+
+# 针对CUB数据集的配置:
+# classifier:
+#   name: SIFT
+#   kwargs:
+#     semantic_dim: 312  # CUB数据集使用312维语义特征
+#     classifier_method: metric
+#     setting: in
+#     num_aug: 5
+#     lr: 0.001
+#     grad_lr: 0.1
+#     ablation: no
+#     cls: lr
+
+# 使用逻辑回归非参数分类器:
+# classifier:
+#   name: SIFT
+#   kwargs:
+#     semantic_dim: 300
+#     classifier_method: nonparam  # 使用非参数分类器
+#     setting: in
+#     num_aug: 5
+#     lr: 0.001
+#     grad_lr: 0.1
+#     ablation: no
+#     cls: lr  # 逻辑回归
+
+# 使用SVM非参数分类器:
+# classifier:
+#   name: SIFT
+#   kwargs:
+#     semantic_dim: 300
+#     classifier_method: nonparam  # 使用非参数分类器
+#     setting: in
+#     num_aug: 5
+#     lr: 0.001
+#     grad_lr: 0.1
+#     ablation: no
+#     cls: svm  # 支持向量机
+
+# 使用KNN非参数分类器:
+# classifier:
+#   name: SIFT
+#   kwargs:
+#     semantic_dim: 300
+#     classifier_method: nonparam  # 使用非参数分类器
+#     setting: in
+#     num_aug: 5
+#     lr: 0.001
+#     grad_lr: 0.1
+#     ablation: no
+#     cls: knn  # k近邻
+
+# classifier:
+#   name: SIFT
+#   kwargs:
+#     semantic_dim: 300
+#     classifier_method: gradient  # 使用梯度分类器
+#     setting: tran  # 转导设置
+#     num_aug: 10  # 更多增强样本
+#     lr: 0.0005
+#     grad_lr: 0.05
+#     ablation: enc_recon  # 消融研究：移除编码器重构
+#     cls: lr
+
+# classifier:
+#   name: SIFT
+#   kwargs:
+#     semantic_dim: 600  # 更大的语义维度
+#     classifier_method: metric
+#     setting: in
+#     num_aug: 3
+#     lr: 0.002
+#     grad_lr: 0.1
+#     ablation: cpt  # 消融研究：移除紧凑性损失
+#     cls: lr
