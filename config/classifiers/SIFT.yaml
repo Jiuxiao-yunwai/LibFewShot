@@ -1,4 +1,0 @@
-classifier:
-  name: SIFT
-  kwargs:
-    setting: in  # in (inductive), tran (transductive)
