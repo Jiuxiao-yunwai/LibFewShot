@@ -1,6 +1,7 @@
 # data_root: /data/fewshot/miniImageNet--ravi
 # data_root: /mnt/d/Users/Jiuxiao/Documents/MyProjects/LibFewShot/datasets/miniImageNet--ravi
-data_root: /mnt/e/dataset/LibFewShot/StanfordDog
+# data_root: /mnt/e/dataset/LibFewShot/StanfordDog
+data_root : /root/autodl-tmp/dataset01/miniImageNet--ravi
 image_size: 84
 use_memory: False
 augment: True
