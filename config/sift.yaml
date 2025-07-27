@@ -5,3 +5,31 @@ includes:
   - headers/optimizer.yaml
   - backbones/Conv32F.yaml
   - classifiers/SIFT.yaml
+
+# 设备配置
+device_ids: 0
+
+# Few-shot学习参数
+way_num: 5
+shot_num: 1
+query_num: 15
+episode_size: 1
+
+# 训练和测试episode数量
+train_episode: 100    # 训练episode数量
+test_episode: 100     # 测试episode数量
+
+# 训练轮数 - 这是您要调整的关键参数
+epoch: 200            # 设置训练的epoch数量
+
+# 保存模型的部分
+save_part:
+  - emb_func
+  - classifier
+
+# SIFT分类器配置（如果需要额外参数）
+classifier:
+  name: SIFT
+  kwargs:
+    setting: in  # in (inductive), tran (transductive)
+    # 可以在这里添加其他SIFT特定参数

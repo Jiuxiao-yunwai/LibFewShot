@@ -9,9 +9,43 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from sklearn.cluster import KMeans
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+
+try:
+    import pulp as lp
+except ImportError:
+    print("Warning: pulp is not installed. Route planning will be disabled.")
+    lp = None
 
 from core.utils import accuracy
 from .metric_model import MetricModel
+
+
+class Classifier(nn.Module):
+    """Classifier for SIFT model compatibility"""
+    def __init__(self, way, z_dim):
+        super().__init__()
+        self.z_dim = z_dim
+        self.way = way
+        self.vars = nn.ParameterList()
+        self.fc1_w = nn.Parameter(torch.ones([self.way, self.z_dim]))
+        torch.nn.init.kaiming_normal_(self.fc1_w)
+        self.vars.append(self.fc1_w)
+        self.fc1_b = nn.Parameter(torch.zeros(self.way))
+        self.vars.append(self.fc1_b)
+
+    def forward(self, input_x, the_vars=None):
+        if the_vars is None:
+            the_vars = self.vars
+        fc1_w = the_vars[0]
+        fc1_b = the_vars[1]
+        net = F.linear(input_x, fc1_w, fc1_b)
+        return net
+
+    def parameters(self):
+        return self.vars
 
 
 def np_proto(feat, label, way):
@@ -149,6 +183,17 @@ class SIFT(MetricModel):
         self.setting = setting  # 'in' for inductive, 'tran' for transductive
         self.sift_layer = SIFTLayer(setting=setting)
         self.loss_func = nn.CrossEntropyLoss()
+        
+        # Add classifier for backward compatibility
+        # This will be properly initialized when we know the feature dimension
+        self.classifier = None
+        self._classifier_initialized = False
+
+    def _initialize_classifier(self, feat_dim):
+        """Initialize classifier for backward compatibility"""
+        if not self._classifier_initialized:
+            self.classifier = Classifier(self.way_num, feat_dim).to(self.device)
+            self._classifier_initialized = True
 
     def set_forward(self, batch):
         """Forward pass for evaluation"""
@@ -157,6 +202,9 @@ class SIFT(MetricModel):
         
         episode_size = images.size(0) // (self.way_num * (self.shot_num + self.query_num))
         feat = self.emb_func(images)
+        
+        # Initialize classifier if needed for backward compatibility
+        self._initialize_classifier(feat.size(-1))
         
         support_feat, query_feat, support_target, query_target = self.split_by_episode(feat, mode=1)
         
@@ -176,10 +224,13 @@ class SIFT(MetricModel):
         episode_size = images.size(0) // (self.way_num * (self.shot_num + self.query_num))
         feat = self.emb_func(images)
         
+        # Initialize classifier if needed for backward compatibility
+        self._initialize_classifier(feat.size(-1))
+        
         support_feat, query_feat, support_target, query_target = self.split_by_episode(feat, mode=1)
         
         output = self.sift_layer(
-            query_feat, support_feat, support_target,
+            query_feat, support_feat, support_target, 
             self.way_num, self.shot_num, self.query_num
         ).view(episode_size * self.way_num * self.query_num, self.way_num)
         
@@ -187,8 +238,6 @@ class SIFT(MetricModel):
         acc = accuracy(output, query_target.reshape(-1))
         
         return output, acc, loss
-
-
 def route_plan(Dij):
     """Route planning using linear programming"""
     if lp is None:
