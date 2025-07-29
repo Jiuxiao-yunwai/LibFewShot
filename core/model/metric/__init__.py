@@ -14,4 +14,4 @@ from .deepbdc import DeepBDC
 from .frn import FRN
 from .meta_baseline import MetaBaseline
 from .mcl import MCL
-from .sift import SIFT
+# from .sift import SIFT

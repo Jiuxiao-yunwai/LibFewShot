@@ -1,12 +1,37 @@
+# SIFT 分类器配置文件
 classifier:
   name: SIFT
   kwargs:
-    semantic_dim: 300  # 语义特征维度: miniImageNet等数据集用300, CUB数据集用312
-    classifier_method: metric  # 分类方法: metric(度量学习), gradient(梯度), nonparam(非参数)
-    setting: in  # 评估设置: in(归纳), tran(转导)
-    num_aug: 5  # 每个基础类的增强样本数量
-    lr: 0.001  # 编码器/变换器/解码器的学习率
-    grad_lr: 0.1  # 基于梯度分类器的学习率
-    ablation: no  # 消融研究: no(完整), enc_recon, dec_recon, cpt, all
-    cls: lr  # 非参数分类器类型: lr(逻辑回归), svm(支持向量机), knn(k近邻) - 仅在classifier_method为nonparam时使用
-    mode: st  # SIFT模式: st(语义变换), ns(无语义), dc(直接分类)
+    # --- 核心路径 ---
+    # feat_dim 会被 backbone 的输出维度自动覆盖
+    feat_dim: 640 
+    # GloVe 词向量文件路径
+    glove_path: /root/autodl-tmp/dataset01/glove.6B.50d.txt 
+    # 预提取的基类特征将被自动保存/加载的路径
+    pre_extract_path: /root/autodl-tmp/dataset01/miniImageNet_resnet12_base_features.npy
+
+    # --- 特征生成超参数 (ns) ---
+    # n_generated (ns): 每个新类要生成的特征数量
+    n_generated: 10      
+
+    # --- 语义转换 (ST) 生成器训练超参数 ---
+    # st_iter (st): 训练迭代次数
+    st_iter: 50
+    # lr_st (lr): 学习率
+    lr_st: 0.005  
+    # dc_st (dc): 权重衰减 (L2正则化)
+    dc_st: 0.01
+
+    # --- 损失函数权重 ---
+    # compactness_w: 紧凑性损失的权重
+    compactness_w: 1.0    
+
+    # --- 学习设置 ---
+    # setting: 可选 'in' (inductive) 或 'tr' (transductive)
+    setting: 'tr'
+    
+    # --- 最终分类器模式 -- -
+    # final_classifier: 可选 'LR', 'SVM', 'GD'
+    # classifier_max_iter: 'LR' 或 'SVM' 的最大迭代次数
+    final_classifier: 'LR'
+    classifier_max_iter: 1000
